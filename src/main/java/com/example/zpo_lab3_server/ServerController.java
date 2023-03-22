@@ -19,6 +19,9 @@ public class ServerController {
     private InputStream inputStream;
     private BufferedReader bufferedReader;
 
+    private BlockingDeque<Answer> queue = null;
+    private Listener listener = null;
+
     private boolean b =true;
     @FXML
     public void initialize(){
@@ -30,9 +33,6 @@ public class ServerController {
             //System.out.printf(socket.getLocalAddress().toString());
             inputStream = socket.getInputStream();
             bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-
-
-
         } catch (UnknownHostException ex) {
 
             System.out.println("Server not found: " + ex.getMessage());
@@ -41,6 +41,9 @@ public class ServerController {
 
             System.out.println("I/O error: " + ex.getMessage());
         }
+        queue = new <Answer>() {
+        }
+        listener = new Listener();
     }
 
     @FXML
