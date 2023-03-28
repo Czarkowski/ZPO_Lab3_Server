@@ -8,7 +8,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.*;
 
 public class ServerController {
 
@@ -19,7 +19,7 @@ public class ServerController {
     private InputStream inputStream;
     private BufferedReader bufferedReader;
 
-    private BlockingDeque<Answer> queue = null;
+    private BlockingQueue<Answer> queue = null;
     private Listener listener = null;
 
     private boolean b =true;
@@ -30,7 +30,7 @@ public class ServerController {
             serverSocket = new ServerSocket(port);
             //socket = new Socket("hostname", port);
             socket = serverSocket.accept();
-            //System.out.printf(socket.getLocalAddress().toString());
+            System.out.printf(socket.getLocalAddress().toString());
             inputStream = socket.getInputStream();
             bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
         } catch (UnknownHostException ex) {
@@ -41,9 +41,8 @@ public class ServerController {
 
             System.out.println("I/O error: " + ex.getMessage());
         }
-        queue = new <Answer>() {
-        }
-        listener = new Listener();
+        queue = new ArrayBlockingQueue<Answer>(10);
+        listener = new Listener(queue, bufferedReader);
     }
 
     @FXML

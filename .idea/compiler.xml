@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="ZPO_Lab3_Server" target="19" />
+      <module name="ZPO_Lab3_Server" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>
