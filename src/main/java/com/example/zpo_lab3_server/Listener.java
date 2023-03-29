@@ -1,6 +1,9 @@
 package com.example.zpo_lab3_server;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
@@ -10,15 +13,13 @@ public class Listener implements Runnable{
 
     private BlockingQueue<Answer> queue = null;
     private Socket socket;
-    private BufferedReader bufferedReader;
-    Listener(BlockingQueue<Answer> queue, Socket socket){
+    private ObjectInputStream objectInputStream = null;
+
+            Listener(BlockingQueue<Answer> queue, ObjectInputStream objectInputStream){
         this.queue = queue;
-        this.socket = socket;
+        this.objectInputStream = objectInputStream;
     }
-    Listener(BlockingQueue<Answer> queue, BufferedReader bufferedReader){
-        this.queue = queue;
-        this.bufferedReader = bufferedReader;
-    }
+
     private boolean stop;
 
     void Stop(){
@@ -26,9 +27,16 @@ public class Listener implements Runnable{
     }
     @Override
     public void run() {
+
+        Answer answer = null;
         stop = false;
         while (!stop){
+            try{
+                answer = (Answer) objectInputStream.readObject();
+                queue.add(answer);
+            }catch (Exception ex){
 
+            }
 
 
 
