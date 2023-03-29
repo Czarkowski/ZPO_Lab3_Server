@@ -1,6 +1,9 @@
-package com.example.zpo_lab3_server;
+package PackageAnswer;
 
-public class Answer {
+import java.io.Serializable;
+
+public class Answer implements Serializable {
+
     private String nick;
     private String answer;
 

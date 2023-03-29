@@ -1,5 +1,6 @@
 package com.example.zpo_lab3_server;
 
+import PackageAnswer.Answer;
 import javafx.fxml.FXML;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -28,11 +29,14 @@ public class ServerController {
     private BlockingQueue<Answer> queue = null;
     private Listener listener = null;
 
+    private Analyzer analyzer = null;
+
     private final Path path = Path.of("pytania.txt");
     private BufferedReader bufferedReader = null;
 
     private boolean b =true;
-
+    private Thread threadListener = null;
+    private Thread threadAnalyzer = null;
     private List<Pair<String,String>> pairList = new ArrayList<>();
     private Pair<String,String> pairOf2string(String[] s){
         return new Pair<>(s[0], s[1]);
@@ -55,8 +59,6 @@ public class ServerController {
 
 
 
-
-
         } catch (UnknownHostException ex) {
 
             System.out.println("Server not found: " + ex.getMessage());
@@ -67,12 +69,48 @@ public class ServerController {
         }
         queue = new ArrayBlockingQueue<Answer>(10);
         listener = new Listener(queue, objectInputStream);
+        analyzer = new Analyzer(queue,this);
 
+        questionIndex = -1;
+        text = "";
+        nextQuestion();
 
-
+        threadListener = new Thread(listener);
+        threadAnalyzer = new Thread(analyzer);
+        threadListener.start();
+        threadAnalyzer.start();
     }
 
     @FXML
     private Text textBox;
+    private String text;
+    private Integer questionIndex;
 
+    private Pair<String,String> currentQuestion;
+    public void nextQuestion(){
+        questionIndex++;
+        if (questionIndex == pairList.size()){
+            listener.Stop();
+            analyzer.Stop();
+        }else {
+            currentQuestion = pairList.get(questionIndex);
+            text += currentQuestion.getKey() + "\n";
+            textBox.setText(text);
+            analyzer.setGoodAnswer(currentQuestion.getValue());
+        }
+    }
+    public void checkAnswer(String nick, String answer){
+        String str = nick +" odpowiedział: " + answer;
+        if (answer.equals(currentQuestion.getValue())){
+            str += " Dobrze!\n";
+            text += str;
+            textBox.setText(text);
+            nextQuestion();
+        }else {
+            str += " Źle!\n";
+            text += str;
+            textBox.setText(text);
+        }
+
+    }
 }
