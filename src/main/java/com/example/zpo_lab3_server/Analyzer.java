@@ -20,27 +20,26 @@ public class Analyzer implements Runnable{
         this.serverController = serverController;
     }
 
-    private String goodAnswer;
-
-    public void setGoodAnswer(String ans)
-    {
-        this.goodAnswer = ans;
-    }
     @Override
     public void run() {
         Answer answer = null;
         stop = false;
 
-        while (!stop){
-            try {
-                answer = queue.take();
-                serverController.checkAnswer(answer.getNick(),answer.getAnswer());
+        while (!stop) {
 
-            }catch (InterruptedException ex){
+            if (queue.size() > 0)
+                try {
+                    System.out.println("Pobieranie z kolejki\n");
+                    answer = queue.take();
+                    System.out.println("Pobrano z kolejki " + answer.getNick() + "\n");
+                    serverController.checkAnswer(answer.getNick(), answer.getAnswer());
 
-            }
+                } catch (InterruptedException ex) {
+                    System.out.println("Interrupted error: " + ex.getMessage());
+                }
 
         }
+        System.out.println("Analyzer close");
 
     }
 }

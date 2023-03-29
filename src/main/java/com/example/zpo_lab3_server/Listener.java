@@ -14,7 +14,7 @@ public class Listener implements Runnable{
     private Socket socket;
     private ObjectInputStream objectInputStream = null;
 
-            Listener(BlockingQueue<Answer> queue, ObjectInputStream objectInputStream){
+    Listener(BlockingQueue<Answer> queue, ObjectInputStream objectInputStream) {
         this.queue = queue;
         this.objectInputStream = objectInputStream;
     }
@@ -27,24 +27,21 @@ public class Listener implements Runnable{
     @Override
     public void run() {
 
-        Answer answer = null;
+
         stop = false;
         while (!stop){
             try{
-                System.out.println("czekanie na odpowiedź");
+                Answer answer = null;
+                System.out.println("czekanie na odpowiedź\n");
                 answer = (Answer) objectInputStream.readObject();
-                System.out.println("otrzymano odpowiedź od " + answer.getNick());
+                System.out.println("otrzymano odpowiedź od " + answer.getNick()+"\n");
                 queue.add(answer);
             }catch (IOException ex){
                 System.out.println("I/O error: " + ex.getMessage());
             }catch (ClassNotFoundException ex){
                 System.out.println("Class Not Found error: " + ex.getMessage());
             }
-
-
-
-
         }
-
+        System.out.println("Listener close");
     }
 }
