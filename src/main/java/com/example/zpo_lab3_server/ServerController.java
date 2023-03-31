@@ -1,7 +1,6 @@
 package com.example.zpo_lab3_server;
 
 import PackageAnswer.Answer;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.text.Text;
@@ -23,6 +22,7 @@ public class ServerController {
 
     private ServerSocket serverSocket = null;
     private BlockingQueue<Answer> queue = null;
+    private List<Listener> clients = null;
     private Listener listener = null;
     private Analyzer analyzer = null;
 
@@ -31,19 +31,23 @@ public class ServerController {
         return new Pair<>(s[0], s[1]);
     }
 
-
-    private void getConnection(){
+    private Thread thread = null;
+    private boolean isRun = false;
+    private void getConnections(){
         Socket socket = null;
-        try {
-            socket = serverSocket.accept();
-            listener = new Listener(queue, socket);
-            setStartValue();
-            nextQuestion();
-            btnStop.setDisable(false);
-        } catch (IOException e) {
-            e.printStackTrace();
-            btnStart.setDisable(false);
+        isRun = true;
+        while (isRun) {
+            try {
+                socket = serverSocket.accept();
+
+                listener = new Listener(queue, socket);
+                clients.add(listener);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        clients.forEach(Listener::Stop);
+        clients.clear();
     }
 
     @FXML
@@ -58,29 +62,31 @@ public class ServerController {
         btnStop.setDisable(true);
         textBox.setText("Kliknij Start!");
         pairList = new ArrayList<>();
+        clients = new ArrayList<>();
         try (BufferedReader questionBufferedReader = Files.newBufferedReader(path)){
             questionBufferedReader.lines().forEach(str -> pairList.add(pairOf2string(str.split("\\|",2))));
         } catch (IOException e) {
             e.printStackTrace();
         }
         //pairList.forEach(pair -> System.out.println(pair.getKey()+ " " + pair.getValue()));
-        try {
-            serverSocket = new ServerSocket(PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         queue = new ArrayBlockingQueue<Answer>(10);
         analyzer = new Analyzer(queue,this);
     }
 
     @FXML
     private void btnStartClick(){
+        btnStart.setDisable(true);
         startGame();
+        btnStop.setDisable(false);
     }
 
     @FXML
     private void btnResetClick(){
-        resetGame();
+        btnStop.setDisable(true);
+        stopGame();
+        btnStart.setDisable(false);
+        appendTextln("Kliknij Start!");
     }
 
     private void setStartValue(){
@@ -88,32 +94,37 @@ public class ServerController {
         text = "";
     }
     private void startGame(){
-        btnStart.setDisable(true);
+        try {
+            serverSocket = new ServerSocket(PORT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         textBox.setText("Oczekiwanie na dołączenie uczestnika...");
         System.out.println("Oczekiwanie na dołączenie uczestnika..." );
-        new Thread(this::getConnection).start();
+        thread = new Thread(this::getConnections);
+        thread.start();
+        setStartValue();
+        nextQuestion();
     }
 
-    private void resetGame(){
-        btnStop.setDisable(true);
-        if (listener != null)
-            listener.Stop();
-        btnStart.setDisable(false);
-        appendTextln("Kliknij Start!");
+    private void stopGame(){
+        isRun = false;
+        try {
+            if (serverSocket != null)
+                serverSocket.close();
+            if (thread != null)
+                thread.join();
+
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void close(){
         System.out.println("close");
-        if (listener != null)
-            listener.Stop();
+        stopGame();
         if (analyzer != null)
             analyzer.Stop();
-        try {
-            if (serverSocket != null)
-                serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 
@@ -124,7 +135,7 @@ public class ServerController {
     public void nextQuestion(){
         if (nextQuestionIndex >= pairList.size()){
             appendTextln("Koniec pytań!");
-            resetGame();
+            stopGame();
         }else {
             currentQuestion = pairList.get(nextQuestionIndex);
             appendTextln(currentQuestion.getKey());
