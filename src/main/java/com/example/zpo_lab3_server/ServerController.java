@@ -10,7 +10,6 @@ import javafx.util.Pair;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,39 +18,91 @@ import java.util.concurrent.*;
 
 public class ServerController {
 
+    private final int PORT = 4447;
+    private final Path path = Path.of("pytania.txt");
+
     private ServerSocket serverSocket = null;
-    private Socket socket = null;
-    private int port = 4447;
-    //input & output
-    private InputStream inputStream;
-    private BufferedReader questionBufferedReader;
-
-    private ObjectInputStream objectInputStream = null;
-
     private BlockingQueue<Answer> queue = null;
     private Listener listener = null;
-
     private Analyzer analyzer = null;
 
-    private final Path path = Path.of("pytania.txt");
-    private BufferedReader bufferedReader = null;
-
-    private boolean b =true;
-    private Thread threadListener = null;
-    private Thread threadAnalyzer = null;
     private List<Pair<String,String>> pairList = null;
     private Pair<String,String> pairOf2string(String[] s){
         return new Pair<>(s[0], s[1]);
     }
 
 
+    private void getConnection(){
+        Socket socket = null;
+        try {
+            socket = serverSocket.accept();
+            listener = new Listener(queue, socket);
+            setStartValue();
+            nextQuestion();
+            btnStop.setDisable(false);
+        } catch (IOException e) {
+            e.printStackTrace();
+            btnStart.setDisable(false);
+        }
+    }
+
+    @FXML
+    private Text textBox;
+    @FXML
+    private Button btnStart;
+    @FXML
+    private Button btnStop;
+
     @FXML
     public void initialize(){
         btnStop.setDisable(true);
+        textBox.setText("Kliknij Start!");
+        pairList = new ArrayList<>();
+        try (BufferedReader questionBufferedReader = Files.newBufferedReader(path)){
+            questionBufferedReader.lines().forEach(str -> pairList.add(pairOf2string(str.split("\\|",2))));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //pairList.forEach(pair -> System.out.println(pair.getKey()+ " " + pair.getValue()));
+        try {
+            serverSocket = new ServerSocket(PORT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        queue = new ArrayBlockingQueue<Answer>(10);
+        analyzer = new Analyzer(queue,this);
+    }
+
+    @FXML
+    private void btnStartClick(){
+        startGame();
+    }
+
+    @FXML
+    private void btnResetClick(){
+        resetGame();
+    }
+
+    private void setStartValue(){
+        nextQuestionIndex = 0;
+        text = "";
+    }
+    private void startGame(){
+        btnStart.setDisable(true);
+        textBox.setText("Oczekiwanie na dołączenie uczestnika...");
+        System.out.println("Oczekiwanie na dołączenie uczestnika..." );
+        new Thread(this::getConnection).start();
+    }
+
+    private void resetGame(){
+        btnStop.setDisable(true);
+        if (listener != null)
+            listener.Stop();
+        btnStart.setDisable(false);
+        appendTextln("Kliknij Start!");
     }
 
     public void close(){
-        btnStop.setDisable(true);
         System.out.println("close");
         if (listener != null)
             listener.Stop();
@@ -60,106 +111,33 @@ public class ServerController {
         try {
             if (serverSocket != null)
                 serverSocket.close();
-            if (socket != null)
-                socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try {
-            if (threadListener != null)
-            threadListener.join();
-            if (threadAnalyzer != null)
-            threadAnalyzer.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        btnStart.setDisable(false);
-
-    }
-    @FXML
-    private Button btnStart;
-    @FXML
-    private Button btnStop;
-    @FXML
-    private void btnStartClick(){
-        btnStart.setDisable(true);
-        textBox.setText("Oczekiwanie na dołączenie uczestnika...");
-        System.out.println("Oczekiwanie na dołączenie uczestnika..." );
-        try {
-            pairList = new ArrayList<>();
-            questionBufferedReader = Files.newBufferedReader(path);
-            questionBufferedReader.lines().forEach(str -> pairList.add(pairOf2string(str.split("\\|",2))));
-            questionBufferedReader.close();
-            pairList.forEach(pair -> System.out.println(pair.getKey()+ " " + pair.getValue()));
-
-
-            serverSocket = new ServerSocket(port);
-
-            socket = serverSocket.accept();
-            objectInputStream = new ObjectInputStream(socket.getInputStream());
-        }catch (Exception e){
-            System.out.println("Start error!");
-            e.printStackTrace();
-            Platform.exit();
-        }
-
-
-        queue = new ArrayBlockingQueue<Answer>(10);
-        listener = new Listener(queue, objectInputStream);
-        analyzer = new Analyzer(queue,this);
-        threadListener = new Thread(listener);
-        threadAnalyzer = new Thread(analyzer);
-
-        questionIndex = -1;
-        text = "";
-        nextQuestion();
-
-        threadListener.start();
-        threadAnalyzer.start();
-        btnStop.setDisable(false);
-    }
-    @FXML
-    private void btnStopClick(){
-
-        textBox.setText("Zamykanie wątków...");
-        close();
-        textBox.setText("Zakończono!");
-
     }
 
-    @FXML
-    private Text textBox;
-    private String text;
-    private Integer questionIndex;
 
     private Pair<String,String> currentQuestion;
-    private void nextQuestion(){
-        questionIndex++;
+    private String text;
+    private Integer nextQuestionIndex;
+
+    public void nextQuestion(){
+        if (nextQuestionIndex >= pairList.size()){
+            appendTextln("Koniec pytań!");
+            resetGame();
+        }else {
+            currentQuestion = pairList.get(nextQuestionIndex);
+            appendTextln(currentQuestion.getKey());
+            nextQuestionIndex++;
+        }
         queue.clear();
-        if (questionIndex == pairList.size()){
-            appendTextnl("Koniec pytań!");
-            //close();
-            analyzer.Stop();
-        }else {
-            currentQuestion = pairList.get(questionIndex);
-            appendTextnl(currentQuestion.getKey());
-        }
     }
-    public void checkAnswer(String nick, String answer){
-        String str = nick +" odpowiedział: " + answer;
-        if (answer.equals(currentQuestion.getValue())){
-            str += " Dobrze!";
-            appendTextnl(str);
-            nextQuestion();
-        }else {
-            str += " Źle!";
-            appendTextnl(str);
-        }
-
+    public boolean checkAnswer(String answer){
+        return currentQuestion.getValue().equals(answer);
     }
 
-    private void appendTextnl(String str){
-        text = text + "\n" + str;
+    public void appendTextln(String str){
+        text = text + str + "\n";
         textBox.setText(text);
     }
 }

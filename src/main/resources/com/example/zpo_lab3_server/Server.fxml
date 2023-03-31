@@ -11,10 +11,10 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
    <children>
-      <Text fx:id="textBox" strokeType="OUTSIDE" strokeWidth="0.0" text="Text" />
+      <Text fx:id="textBox" strokeType="OUTSIDE" strokeWidth="0.0" text="" />
       <Pane prefHeight="49.0" prefWidth="200.0">
          <children>
-            <Button fx:id="btnStop" layoutX="134.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnStopClick" text="Stop" />
+            <Button fx:id="btnStop" layoutX="134.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnResetClick" text="Reset" />
             <Button fx:id="btnStart" layoutX="14.0" layoutY="18.0" mnemonicParsing="false" onAction="#btnStartClick" text="Start" />
          </children>
       </Pane>
