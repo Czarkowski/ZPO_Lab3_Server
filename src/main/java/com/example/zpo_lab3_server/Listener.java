@@ -8,12 +8,10 @@ import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
 public class Listener implements Runnable{
-
     private BlockingQueue<Answer> queue = null;
     private Socket socket= null;
     private ObjectInputStream objectInputStream = null;
     private Thread thread = null;
-
     Listener(BlockingQueue<Answer> queue, Socket socket) {
         this.queue = queue;
         this.socket = socket;
@@ -25,7 +23,6 @@ public class Listener implements Runnable{
         thread = new Thread(this);
         thread.start();
     }
-
     private boolean stop;
     public void Stop(){
         stop = true;
@@ -40,7 +37,6 @@ public class Listener implements Runnable{
             e.printStackTrace();
         }
     }
-
     @Override
     public void run() {
         stop = false;
@@ -51,7 +47,6 @@ public class Listener implements Runnable{
                     answer = (Answer) objectInputStream.readObject();
                     System.out.println("otrzymano odpowiedź od " + answer.getNick() + "\n");
                     queue.add(answer);
-
             }catch (IOException ex){
                 System.out.println("I/O error: " + ex.getMessage());
             }catch (ClassNotFoundException ex){

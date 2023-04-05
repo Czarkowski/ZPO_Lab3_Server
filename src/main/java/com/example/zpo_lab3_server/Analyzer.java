@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 
 public class Analyzer implements Runnable{
-
     private BlockingQueue<Answer> queue = null;
     private ServerController serverController = null;
     private Thread thread = null;
@@ -16,7 +15,6 @@ public class Analyzer implements Runnable{
         thread = new Thread(this);
         thread.start();
     }
-
     private boolean stop;
     public void Stop() {
         this.stop = true;
@@ -26,7 +24,6 @@ public class Analyzer implements Runnable{
             e.printStackTrace();
         }
     }
-
     @Override
     public void run() {
         Answer answer = null;
@@ -49,9 +46,7 @@ public class Analyzer implements Runnable{
                 } catch (InterruptedException ex) {
                     System.out.println("Interrupted error: " + ex.getMessage());
                 }
-
         }
         System.out.println("Analyzer stop");
-
     }
 }

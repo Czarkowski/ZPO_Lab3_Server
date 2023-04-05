@@ -13,7 +13,6 @@ public class ServerApplication extends Application {
     ServerController SC;
     @Override
     public void start(Stage stage) throws IOException {
-
         FXMLLoader fxmlLoader = new FXMLLoader();
         Parent root = fxmlLoader.load(getClass().getResourceAsStream("Server.fxml"));
         SC = fxmlLoader.getController();
@@ -22,10 +21,11 @@ public class ServerApplication extends Application {
         stage.setScene(scene);
         stage.setOnCloseRequest(e -> {
             SC.close();
+            Platform.exit();
+            System.exit(0);
         });
         stage.show();
     }
-
     public static void main(String[] args) {
         launch();
     }
