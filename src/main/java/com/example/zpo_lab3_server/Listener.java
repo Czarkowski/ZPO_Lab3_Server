@@ -4,17 +4,18 @@ import PackageAnswer.Answer;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
 public class Listener implements Runnable{
-    private BlockingQueue<Answer> queue = null;
-    private Socket socket= null;
+    private BlockingQueue<Socket> queue = null;
+    private ServerSocket serverSocket= null;
     private ObjectInputStream objectInputStream = null;
     private Thread thread = null;
-    Listener(BlockingQueue<Answer> queue, Socket socket) {
+    Listener(BlockingQueue<Socket> queue, ServerSocket socket) {
         this.queue = queue;
-        this.socket = socket;
+        this.serverSocket = socket;
         try {
             this.objectInputStream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
@@ -42,11 +43,10 @@ public class Listener implements Runnable{
         stop = false;
         while (!stop) {
             try {
-                    Answer answer = null;
+                    Socket socket = serverSocket.accept();
                     System.out.println("czekanie na odpowiedź\n");
-                    answer = (Answer) objectInputStream.readObject();
-                    System.out.println("otrzymano odpowiedź od " + answer.getNick() + "\n");
-                    queue.add(answer);
+                    //System.out.println("otrzymano odpowiedź od " + answer.getNick() + "\n");
+                    queue.add(socket);
             }catch (IOException ex){
                 System.out.println("I/O error: " + ex.getMessage());
             }catch (ClassNotFoundException ex){

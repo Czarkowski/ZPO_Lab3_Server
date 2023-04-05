@@ -20,7 +20,7 @@ public class ServerController {
     private final int PORT = 4447;
     private final Path path = Path.of("pytania.txt");
     private ServerSocket serverSocket = null;
-    private BlockingQueue<Answer> queue = null;
+    private BlockingQueue<Socket> queue = null;
     private List<Listener> clients = null;
     private Listener listener = null;
     private Analyzer analyzer = null;
